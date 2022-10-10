@@ -1,0 +1,6 @@
+Region,Country,ItemType,SalesChannel,OrderPriority,OrderDate,OrderID,ShipDate,UnitsSold,UnitPrice,UnitCost,TotalRevenue,TotalCost,TotalProfit
+Sub-Saharan Africa,South Africa,Fruits,Offline,M,7/27/2012,443368995,7/28/2012,1593,9.33,6.92,14862.69,11023.56,3839.13
+Middle East and North Africa,Morocco,Clothes,Online,M,9/14/2013,667593514,10/19/2013,4611,109.28,35.84,503890.08,165258.24,338631.84
+Australia and Oceania,Papua New Guinea,Meat,Offline,M,5/15/2015,940995585,10/19/2014,360,421.89,364.69,151880.4,131288.4,20592
+Sub-Saharan Africa,Djibouti,Clothes,Offline,H,5/17/2017,880811536,10/19/2015,562,109.28,35.84,61415.36,20142.08,41273.28
+Europe,Slovakia,Beverages,Offline,L,10/26/2016,174590194,10/19/2016,3973,47.45,31.79,188518.85,126301.67,62217.18

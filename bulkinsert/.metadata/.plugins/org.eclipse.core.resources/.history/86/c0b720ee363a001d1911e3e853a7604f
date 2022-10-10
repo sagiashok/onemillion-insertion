@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:java="http://www.mulesoft.org/schema/mule/java" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/java http://www.mulesoft.org/schema/mule/java/current/mule-java.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="fd36a60e-b473-4631-bde8-e56b4b908576" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="602deb6b-2bcf-42fc-8684-229e9f56b442" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Ashok@338@" database="onemillion" />
+	</db:config>
+	<file:config name="File_Config1" doc:name="File Config" doc:id="7783f07a-5a6d-4bba-bd1a-a8a29caf3e1e" />
+	<http:listener-config name="HTTP_Listener_config1" doc:name="HTTP Listener config" doc:id="e55e1445-661a-4a92-a1d1-d118b188d673" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="73d3907d-f2cc-4eaf-8226-caa1cda687b3" >
+		<http:listener-connection host="localhost" port="8083" />
+	</http:listener-config>
+	<flow name="bulk_inserFlow1" doc:id="81119bf8-6c63-47fc-bdff-8f67abc5c0fd" >
+		<http:listener doc:name="Listener" doc:id="a72afe55-300d-4f1a-bc06-382b8e4eb7ff" config-ref="HTTP_Listener_config" path="/records"/>
+		<java:invoke-static doc:name="Invoke static" doc:id="68eae9a5-43c2-4b17-94f7-2d3d34f551c7" class="bulk_inser.Splitcsvfile" method="split()"/>
+		<set-payload value='"status":sucess"' doc:name="Set Payload" doc:id="f5a5cda1-4111-46a7-b288-581173c78f6c" />
+	</flow>
+	<flow name="bulk_inserFlow" doc:id="a9cffb8c-887a-411c-8142-a348b9ab8de7" >
+		<file:listener doc:name="On New or Updated File" doc:id="fb7b0d7d-ee37-4296-b470-7baa55950580" config-ref="File_Config1" directory="C:\Users\Ashok Sagi\Desktop\records" watermarkMode="CREATED_TIMESTAMP">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</file:listener>
+		<ee:transform doc:name="Transform Message" doc:id="d3e81178-1642-48a6-94e7-e8c9b0a90d15" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="4b112a74-3822-4274-85db-7342ae405c46" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map(value,index) ->{
+	Region: value.Region,
+	Country: value.Country,
+	ItemType: value.ItemType,
+	SalesChannel: value.SalesChannel,
+	OrderPriority: value.OrderPriority,
+	OrderDate: value.OrderDate replace "/" with ("-"),
+	OrderID: value.OrderID,
+	ShipDate: value.ShipDate   replace "/" with ("-"),
+	UnitsSold: value.UnitsSold,
+	UnitPrice: value.UnitPrice,
+	UnitCost: value.UnitCost,
+	TotalRevenue: value.TotalRevenue,
+	TotalCost: value.TotalCost,
+	TotalProfit: value.TotalProfit,
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="bulk_inserBatch_Job" doc:id="1e81fa9d-cbc5-40fd-b40e-200e89a32fef" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="933a2912-b592-465a-b708-5bf00894a955" >
+					<ee:transform doc:name="Transform Message" doc:id="94421230-74e7-4c86-8b52-fd1b1cc5617e">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[payload]]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<ee:transform doc:name="Transform Message" doc:id="b7a3df6b-ff97-4858-ae7c-9fbacf75ea12">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+payload map(value,index) ->{
+	Region: value.Region,
+	Country: value.Country,
+	ItemType: value.ItemType,
+	SalesChannel: value.SalesChannel,
+	OrderPriority: value.OrderPriority,
+	OrderDate: value.OrderDate as Date{format:"M-dd-yyyy"},
+	OrderID: value.OrderID,
+	ShipDate: value.ShipDate  as Date{format:"M-dd-yyyy"},
+	UnitsSold: value.UnitsSold,
+	UnitPrice: value.UnitPrice,
+	UnitCost: value.UnitCost,
+	TotalRevenue: value.TotalRevenue,
+	TotalCost: value.TotalCost,
+	TotalProfit: value.TotalProfit,
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+					<db:bulk-insert doc:id="7dc0d668-5ba9-43cb-99f7-e4fef3c3503b" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into million1(Region,Country,ItemType,SalesChannel,OrderPriority,OrderDate,OrderID,ShipDate,UnitsSold,UnitPrice,UnitCost,TotalRevenue,TotalCost,TotalProfit) values
+(:Region,:Country,:ItemType,:SalesChannel,:OrderPriority,:OrderDate,:OrderID,:ShipDate,:UnitsSold,:UnitPrice,:UnitCost,:TotalRevenue,:TotalCost,:TotalProfit)
+]]></db:sql>
+		</db:bulk-insert>
+					<batch:aggregator doc:name="Batch Aggregator" doc:id="25a440b2-dc0d-4446-87c0-cae29b48eb3c" size="10">
+						<logger level="INFO" doc:name="Logger" doc:id="93dd8c9d-f125-4392-ba3f-84b5ffe87fd8" message="#[payload]"/>
+					</batch:aggregator>
+				</batch:step>
+			</batch:process-records>
+			<batch:on-complete >
+				<logger level="INFO" doc:name="Logger" doc:id="153126d8-b8eb-4cdb-a770-de942e817b06" message="on complte process end"/>
+			</batch:on-complete>
+		</batch:job>
+	</flow>
+</mule>
